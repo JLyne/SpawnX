@@ -3,6 +3,7 @@ main: xyz.derkades.spawnx.Main
 version: 1.0.0
 author: Derkades
 description: 'Adds /spawn and teleports players to spawn on join.'
+api-version: '1.16'
 
 commands:
   setspawn:
