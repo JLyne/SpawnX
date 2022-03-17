@@ -3,6 +3,7 @@ package xyz.derkades.spawnx;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
+import org.bukkit.World;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
@@ -30,7 +31,25 @@ public class Main extends JavaPlugin implements Listener {
 					player.sendMessage(ChatColor.RED + "You do not have permission to execute this command.");
 				}
 			} else {
-				sender.sendMessage("You have to be a player in order to execute this command.");
+				if (args.length != 4) {
+					sender.sendMessage(ChatColor.RED + "Console usage requires 4 arguments <world> <x> <y> <z>");
+					return false;
+				}
+
+				String worldName = args[0];
+				double x = Double.parseDouble(args[1]);
+				double y = Double.parseDouble(args[2]);
+				double z = Double.parseDouble(args[3]);
+
+				World world = getServer().getWorld(worldName);
+
+				if(world == null) {
+					sender.sendMessage(ChatColor.RED + "Unknown world: " + worldName);
+					return false;
+				}
+
+				setSpawnLocation(new Location(world, x, y, z));
+				sender.sendMessage(ChatColor.DARK_AQUA + "The spawn location has been set!");
 			}
 
 			return true;
