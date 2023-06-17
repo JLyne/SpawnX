@@ -1,7 +1,8 @@
 package xyz.derkades.spawnx;
 
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.command.Command;
@@ -11,6 +12,7 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.jetbrains.annotations.NotNull;
 
 public class Main extends JavaPlugin implements Listener {
 
@@ -21,18 +23,21 @@ public class Main extends JavaPlugin implements Listener {
 	}
 
 	@Override
-	public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
+	public boolean onCommand(@NotNull CommandSender sender, Command command, @NotNull String label, String[] args) {
 		if (command.getName().equalsIgnoreCase("setspawn")) {
 			if (sender instanceof Player player) {
 				if (player.hasPermission("spawnx.setspawn")) {
 					setSpawnLocation(player.getLocation());
-					player.sendMessage(ChatColor.DARK_AQUA + "The spawn location has been set!");
+					player.sendMessage(Component.text("The spawn location has been set!")
+											   .color(NamedTextColor.DARK_AQUA));
 				} else {
-					player.sendMessage(ChatColor.RED + "You do not have permission to execute this command.");
+					player.sendMessage(Component.text("You do not have permission to execute this command.")
+											   .color(NamedTextColor.RED));
 				}
 			} else {
 				if (args.length != 4) {
-					sender.sendMessage(ChatColor.RED + "Console usage requires 4 arguments <world> <x> <y> <z>");
+					sender.sendMessage(Component.text("Console usage requires 4 arguments <world> <x> <y> <z>")
+											   .color(NamedTextColor.RED));
 					return false;
 				}
 
@@ -44,12 +49,13 @@ public class Main extends JavaPlugin implements Listener {
 				World world = getServer().getWorld(worldName);
 
 				if(world == null) {
-					sender.sendMessage(ChatColor.RED + "Unknown world: " + worldName);
+					sender.sendMessage(Component.text("Unknown world: " + worldName).color(NamedTextColor.RED));
 					return false;
 				}
 
 				setSpawnLocation(new Location(world, x, y, z));
-				sender.sendMessage(ChatColor.DARK_AQUA + "The spawn location has been set!");
+				sender.sendMessage(Component.text("The spawn location has been set!")
+										   .color(NamedTextColor.DARK_AQUA));
 			}
 
 			return true;
@@ -58,7 +64,8 @@ public class Main extends JavaPlugin implements Listener {
 				if (player.hasPermission("spawnx.spawn")) {
 					player.teleport(getSpawnLocation());
 				} else {
-					player.sendMessage(ChatColor.RED + "You do not have permission to execute this command.");
+					player.sendMessage(Component.text("You do not have permission to execute this command.")
+											   .color(NamedTextColor.RED));
 				}
 			} else {
 				sender.sendMessage("You have to be a player in order to execute this command.");
