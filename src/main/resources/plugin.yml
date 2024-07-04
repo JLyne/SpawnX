@@ -5,7 +5,7 @@ authors:
   - Jim (NotKatuen)
   - Derkades
 description: 'Adds /spawn and teleports players to spawn on join.'
-api-version: 1.19
+api-version: '1.20.6'
 
 commands:
   setspawn:
