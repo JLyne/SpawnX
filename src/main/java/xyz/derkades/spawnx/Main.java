@@ -1,80 +1,103 @@
 package xyz.derkades.spawnx;
 
+import com.mojang.brigadier.Command;
+import com.mojang.brigadier.LiteralMessage;
+import com.mojang.brigadier.exceptions.CommandSyntaxException;
+import com.mojang.brigadier.exceptions.SimpleCommandExceptionType;
+import com.mojang.brigadier.tree.LiteralCommandNode;
+import io.papermc.paper.command.brigadier.CommandSourceStack;
+import io.papermc.paper.command.brigadier.Commands;
+import io.papermc.paper.command.brigadier.argument.resolvers.BlockPositionResolver;
+import io.papermc.paper.math.BlockPosition;
+import io.papermc.paper.plugin.lifecycle.event.LifecycleEventManager;
+import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.World;
-import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
+import org.bukkit.command.ConsoleCommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
-import org.jetbrains.annotations.NotNull;
 
+import static io.papermc.paper.command.brigadier.Commands.literal;
+import static io.papermc.paper.command.brigadier.Commands.argument;
+import static com.mojang.brigadier.arguments.FloatArgumentType.floatArg;
+import static io.papermc.paper.command.brigadier.argument.ArgumentTypes.blockPosition;
+import static io.papermc.paper.command.brigadier.argument.ArgumentTypes.world;
+
+@SuppressWarnings("UnstableApiUsage")
 public class Main extends JavaPlugin implements Listener {
 
 	@Override
 	public void onEnable() {
 		super.getServer().getPluginManager().registerEvents(this, this);
 		super.saveDefaultConfig();
+
+		LifecycleEventManager<Plugin> manager = getLifecycleManager();
+		manager.registerEventHandler(LifecycleEvents.COMMANDS, event -> registerCommands(event.registrar()));
 	}
 
-	@Override
-	public boolean onCommand(@NotNull CommandSender sender, Command command, @NotNull String label, String[] args) {
-		if (command.getName().equalsIgnoreCase("setspawn")) {
-			if (sender instanceof Player player) {
-				if (player.hasPermission("spawnx.setspawn")) {
-					setSpawnLocation(player.getLocation());
-					player.sendMessage(Component.text("The spawn location has been set!")
-											   .color(NamedTextColor.DARK_AQUA));
-				} else {
-					player.sendMessage(Component.text("You do not have permission to execute this command.")
-											   .color(NamedTextColor.RED));
-				}
-			} else {
-				if (args.length != 4) {
-					sender.sendMessage(Component.text("Console usage requires 4 arguments <world> <x> <y> <z>")
-											   .color(NamedTextColor.RED));
-					return false;
-				}
-
-				String worldName = args[0];
-				double x = Double.parseDouble(args[1]);
-				double y = Double.parseDouble(args[2]);
-				double z = Double.parseDouble(args[3]);
-
-				World world = getServer().getWorld(worldName);
-
-				if(world == null) {
-					sender.sendMessage(Component.text("Unknown world: " + worldName).color(NamedTextColor.RED));
-					return false;
-				}
-
-				setSpawnLocation(new Location(world, x, y, z));
-				sender.sendMessage(Component.text("The spawn location has been set!")
-										   .color(NamedTextColor.DARK_AQUA));
-			}
-
-			return true;
-		} else if (command.getName().equalsIgnoreCase("spawn")) {
-			if (sender instanceof Player player) {
-				if (player.hasPermission("spawnx.spawn")) {
+	private void registerCommands(Commands commands) {
+		LiteralCommandNode<CommandSourceStack> spawnCommand = literal("spawn")
+				.requires(source -> source.getSender() instanceof Player player
+						&& player.hasPermission("spawnx.spawn"))
+				.executes(ctx -> {
+					Player player = (Player) ctx.getSource().getSender();
 					player.teleport(getSpawnLocation());
-				} else {
-					player.sendMessage(Component.text("You do not have permission to execute this command.")
-											   .color(NamedTextColor.RED));
-				}
-			} else {
-				sender.sendMessage("You have to be a player in order to execute this command.");
-			}
 
-			return true;
-		}
+					return Command.SINGLE_SUCCESS;
+				}).build();
 
-		return false;
+		Command<CommandSourceStack> setSpawnExecutor = ctx -> {
+			BlockPosition pos = ctx.getArgument("position", BlockPositionResolver.class)
+					.resolve(ctx.getSource());
+			float yaw = ctx.getArgument("yaw", Float.class);
+			World world = ctx.getArgument("world", World.class);
+
+			Location location = new Location(world, pos.x(), pos.y(), pos.z(), yaw, 0);
+			return onSetSpawn(ctx.getSource().getSender(), location);
+		};
+
+		LiteralCommandNode<CommandSourceStack> setSpawnCommand = literal("setspawn")
+				.requires(source -> source.getSender().hasPermission("spawnx.setspawn"))
+				.executes(ctx -> {
+					if(ctx.getSource().getSender() instanceof ConsoleCommandSender) {
+						throw new SimpleCommandExceptionType(
+								new LiteralMessage("You must provide a location from the console")).create();
+					}
+
+					Player player = (Player) ctx.getSource().getSender();
+					return onSetSpawn(player, player.getLocation());
+				})
+				//setspawn <world> <x> <y> <z> <yaw>
+				.then(argument("world", world())
+							  .then(argument("position", blockPosition())
+											.then(argument("yaw", floatArg(-180, 180))
+														  .executes(setSpawnExecutor)))).build();
+
+
+		commands.register(spawnCommand, "Teleport to spawn");
+		commands.register(setSpawnCommand, "Set the spawn location");
+	}
+
+	public int onSetSpawn(CommandSender sender, Location location) {
+		getConfig().set("world-name", location.getWorld().getName());
+		getConfig().set("x", location.getX());
+		getConfig().set("y", location.getY());
+		getConfig().set("z", location.getZ());
+		getConfig().set("pitch", location.getPitch());
+		getConfig().set("yaw", location.getYaw());
+		super.saveConfig();
+
+		sender.sendMessage(Component.text("The spawn location has been set!").color(NamedTextColor.DARK_AQUA));
+
+		return Command.SINGLE_SUCCESS;
 	}
 
 	@EventHandler
@@ -94,15 +117,4 @@ public class Main extends JavaPlugin implements Listener {
 		float yaw = (float) getConfig().getDouble("yaw");
 		return new Location(Bukkit.getWorld(worldName), x, y, z, yaw, pitch);
 	}
-
-	private void setSpawnLocation(Location loc) {
-		getConfig().set("world-name", loc.getWorld().getName());
-		getConfig().set("x", loc.getX());
-		getConfig().set("y", loc.getY());
-		getConfig().set("z", loc.getZ());
-		getConfig().set("pitch", loc.getPitch());
-		getConfig().set("yaw", loc.getYaw());
-		super.saveConfig();
-	}
-
 }
