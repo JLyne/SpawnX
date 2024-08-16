@@ -5,3 +5,4 @@ z: 0
 pitch: 0
 yaw: 0
 teleport-on-join: true
+teleport-on-first-join: true

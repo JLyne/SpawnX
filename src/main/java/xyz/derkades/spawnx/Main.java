@@ -2,7 +2,6 @@ package xyz.derkades.spawnx;
 
 import com.mojang.brigadier.Command;
 import com.mojang.brigadier.LiteralMessage;
-import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.exceptions.SimpleCommandExceptionType;
 import com.mojang.brigadier.tree.LiteralCommandNode;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
@@ -102,8 +101,10 @@ public class Main extends JavaPlugin implements Listener {
 
 	@EventHandler
 	public void onJoin(PlayerJoinEvent event) {
-		if (getConfig().getBoolean("teleport-on-join")) {
-			Player player = event.getPlayer();
+		Player player = event.getPlayer();
+
+		if (getConfig().getBoolean("teleport-on-join") ||
+				(!player.hasPlayedBefore() && getConfig().getBoolean("teleport-on-first-join"))) {
 			player.teleport(getSpawnLocation());
 		}
 	}
