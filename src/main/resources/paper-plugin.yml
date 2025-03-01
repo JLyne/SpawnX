@@ -1,8 +1,0 @@
-name: SpawnX
-main: xyz.derkades.spawnx.Main
-version: @project.version@
-authors:
-  - Jim
-  - Derkades
-description: 'Adds /spawn and teleports players to spawn on join.'
-api-version: '1.21'
