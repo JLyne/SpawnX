@@ -39,7 +39,6 @@ paper {
 
 tasks {
     compileJava {
-        dependsOn(clean)
         options.compilerArgs.addAll(listOf("-Xlint:all", "-Xlint:-processing"))
         options.encoding = "UTF-8"
     }
