@@ -23,6 +23,7 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.jetbrains.annotations.NotNull;
 
 import static io.papermc.paper.command.brigadier.Commands.literal;
 import static io.papermc.paper.command.brigadier.Commands.argument;
@@ -38,7 +39,7 @@ public class Main extends JavaPlugin implements Listener {
 		super.getServer().getPluginManager().registerEvents(this, this);
 		super.saveDefaultConfig();
 
-		LifecycleEventManager<Plugin> manager = getLifecycleManager();
+		LifecycleEventManager<@NotNull Plugin> manager = getLifecycleManager();
 		manager.registerEventHandler(LifecycleEvents.COMMANDS, event -> registerCommands(event.registrar()));
 	}
 
