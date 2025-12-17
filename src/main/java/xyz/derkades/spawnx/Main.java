@@ -7,6 +7,7 @@ import com.mojang.brigadier.tree.LiteralCommandNode;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.command.brigadier.Commands;
 import io.papermc.paper.command.brigadier.argument.resolvers.BlockPositionResolver;
+import io.papermc.paper.event.player.AsyncPlayerSpawnLocationEvent;
 import io.papermc.paper.math.BlockPosition;
 import io.papermc.paper.plugin.lifecycle.event.LifecycleEventManager;
 import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
@@ -20,7 +21,6 @@ import org.bukkit.command.ConsoleCommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
-import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.jetbrains.annotations.NotNull;
@@ -101,12 +101,10 @@ public class Main extends JavaPlugin implements Listener {
 	}
 
 	@EventHandler
-	public void onJoin(PlayerJoinEvent event) {
-		Player player = event.getPlayer();
-
+	public void onJoin(AsyncPlayerSpawnLocationEvent event) {
 		if (getConfig().getBoolean("teleport-on-join") ||
-				(!player.hasPlayedBefore() && getConfig().getBoolean("teleport-on-first-join"))) {
-			player.teleport(getSpawnLocation());
+				(event.isNewPlayer() && getConfig().getBoolean("teleport-on-first-join"))) {
+			event.setSpawnLocation(getSpawnLocation());
 		}
 	}
 
