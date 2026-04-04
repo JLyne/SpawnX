@@ -28,7 +28,7 @@ dependencies {
 
 paper {
     main = "xyz.derkades.spawnx.Main"
-    apiVersion = libs.versions.paperApi.get().replace(Regex("\\-R\\d.\\d-SNAPSHOT"), "")
+    apiVersion = libs.versions.paperApi.get().replace(".build.+", "")
     authors = listOf("Jim (AnEnragedPigeon)", "Derkades")
     description = "Adds /spawn and teleports players to spawn on join."
 }
