@@ -15,6 +15,7 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
+import org.bukkit.NamespacedKey;
 import org.bukkit.World;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.ConsoleCommandSender;
@@ -87,7 +88,7 @@ public class Main extends JavaPlugin implements Listener {
 	}
 
 	public int onSetSpawn(CommandSender sender, Location location) {
-		getConfig().set("world-name", location.getWorld().getName());
+		getConfig().set("world-name", location.getWorld().key().asMinimalString());
 		getConfig().set("x", location.getX());
 		getConfig().set("y", location.getY());
 		getConfig().set("z", location.getZ());
@@ -109,12 +110,18 @@ public class Main extends JavaPlugin implements Listener {
 	}
 
 	private Location getSpawnLocation() {
-		String worldName = getConfig().getString("world-name");
+		String worldName = getConfig().getString("world-name", "");
+		NamespacedKey worldKey = NamespacedKey.fromString(worldName);
 		double x = getConfig().getDouble("x");
 		double y = getConfig().getDouble("y");
 		double z = getConfig().getDouble("z");
 		float pitch = (float) getConfig().getDouble("pitch");
 		float yaw = (float) getConfig().getDouble("yaw");
-		return new Location(Bukkit.getWorld(worldName), x, y, z, yaw, pitch);
+
+		if (worldKey == null || Bukkit.getWorld(worldKey) == null) {
+			getLogger().warning("Cannot spawn player in unknown world " + worldName);
+		}
+
+		return new Location(Bukkit.getWorld(worldKey), x, y, z, yaw, pitch);
 	}
 }
