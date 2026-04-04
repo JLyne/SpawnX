@@ -6,9 +6,9 @@ import com.mojang.brigadier.exceptions.SimpleCommandExceptionType;
 import com.mojang.brigadier.tree.LiteralCommandNode;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.command.brigadier.Commands;
-import io.papermc.paper.command.brigadier.argument.resolvers.BlockPositionResolver;
+import io.papermc.paper.command.brigadier.argument.resolvers.FinePositionResolver;
 import io.papermc.paper.event.player.AsyncPlayerSpawnLocationEvent;
-import io.papermc.paper.math.BlockPosition;
+import io.papermc.paper.math.FinePosition;
 import io.papermc.paper.plugin.lifecycle.event.LifecycleEventManager;
 import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
 import net.kyori.adventure.text.Component;
@@ -29,7 +29,7 @@ import org.jetbrains.annotations.NotNull;
 import static io.papermc.paper.command.brigadier.Commands.literal;
 import static io.papermc.paper.command.brigadier.Commands.argument;
 import static com.mojang.brigadier.arguments.FloatArgumentType.floatArg;
-import static io.papermc.paper.command.brigadier.argument.ArgumentTypes.blockPosition;
+import static io.papermc.paper.command.brigadier.argument.ArgumentTypes.finePosition;
 import static io.papermc.paper.command.brigadier.argument.ArgumentTypes.world;
 
 @SuppressWarnings("UnstableApiUsage")
@@ -56,7 +56,7 @@ public class Main extends JavaPlugin implements Listener {
 				}).build();
 
 		Command<CommandSourceStack> setSpawnExecutor = ctx -> {
-			BlockPosition pos = ctx.getArgument("position", BlockPositionResolver.class)
+			FinePosition pos = ctx.getArgument("position", FinePositionResolver.class)
 					.resolve(ctx.getSource());
 			float yaw = ctx.getArgument("yaw", Float.class);
 			World world = ctx.getArgument("world", World.class);
@@ -74,11 +74,18 @@ public class Main extends JavaPlugin implements Listener {
 					}
 
 					Player player = (Player) ctx.getSource().getSender();
-					return onSetSpawn(player, player.getLocation());
+					Location playerLocation = player.getLocation().toCenterLocation();
+					return onSetSpawn(player, new Location(
+							playerLocation.getWorld(),
+							playerLocation.getBlockX() + 0.5,
+							playerLocation.getBlockY(),
+							playerLocation.getBlockZ() + 0.5,
+							playerLocation.getYaw(),
+							playerLocation.getPitch()));
 				})
 				//setspawn <world> <x> <y> <z> <yaw>
 				.then(argument("world", world())
-							  .then(argument("position", blockPosition())
+							  .then(argument("position", finePosition())
 											.then(argument("yaw", floatArg(-180, 180))
 														  .executes(setSpawnExecutor)))).build();
 
